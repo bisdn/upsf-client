@@ -1,0 +1,82 @@
+upsf:
+  shards:
+    - name: "shard-A"
+      prefixes:
+        - "10.10.16.0/20"
+        - "10.10.0.0/26"
+        - "192.168.0.0/24"
+      exclude:
+        - 10.10.0.1
+    - name: "shard-B"
+      prefixes:
+        - "10.10.0.64/26"
+        - "192.168.1.0/24"
+    - name: "shard-C"
+      prefixes:
+        - "10.10.0.128/26"
+        - "192.168.2.0/24"
+    - name: "shard-D"
+      prefixes:
+        - "10.10.0.192/26"
+        - "192.168.3.0/24"
+    - name: "shard-E"
+      prefixes:
+        - "10.10.1.0/26"
+        - "192.168.4.0/24"
+      serviceGatewayUserPlane: "up-A-1"
+    - name: "shard-F"
+      prefixes:
+        - "10.10.1.64/26"
+        - "192.168.5.0/24"
+      serviceGatewayUserPlane: "up-A-1"
+    - name: "shard-G"
+      prefixes:
+        - "10.10.1.128/26"
+        - "192.168.6.0/24"
+      serviceGatewayUserPlane: "up-A-2"
+    - name: "shard-H"
+      prefixes:
+        - "10.10.1.192/26"
+        - "192.168.7.0/24"
+      serviceGatewayUserPlane: "up-A-2"
+    - name: "shard-auth-generic"
+      prefixes:
+        - "172.17.0.0/16"
+      serviceGatewayUserPlane: "up-A-3"
+    - name: "shard-device-mgmt"
+      serviceGatewayUserPlane: "up-A-3"
+    - name: "shard-acme"
+      prefixes:
+        - "172.16.1.0/24"
+      serviceGatewayUserPlane: "up-A-4"
+  sessionContexts:
+    - name: "minimalistic"
+      sourceMacAddress: "ee:ee:ee:ee:ee:ee"
+    - name: "default-cp-ctx"
+      requiredQuality: 1000
+      requiredServiceGroups:
+        - "basic-internet"
+    - name: "acme"
+      requiredQuality: 100
+      requiredServiceGroups:
+        - "acme"
+      customerType: "business"
+      circuitId: "port18.msan4.bln03.vodafone.de"
+      services:
+        - svlan: 3
+          requiredServiceGroups:
+            - "dev-mgmt"
+        - svlan: 7
+          requiredServiceGroups:
+            - "auth-generic"
+        - svlan: 3001
+        - svlan: 3002
+        - svlan: 3050
+        - sourceMacAddress: "52:54:52:54:52:54"
+          shard: "shard-F"
+          remoteId: "Fritzbox"
+        - svlan: 3999
+    - name: "customerA@example.org"
+      circuitId: "port16.msan03.bln04.bisdn.de"
+      requiredServiceGroups:
+        - "basic-internet"
