@@ -428,7 +428,7 @@ class StoreDictKeyPairToDict(argparse.Action):
         setattr(namespace, self.dest, my_dict)
 
 
-class UpsfError(Exception):
+class UpsfError(RuntimeError):
     """upsf base error"""
 
 
@@ -486,7 +486,7 @@ class UPSF(threading.Thread):
 
     def __str__(self):
         """return simple string"""
-        return f"{self.__class__.__name__}()"
+        return f"{self.__class__.__name__}({self.upsf_host}:{self.upsf_port})"
 
     def __repr__(self):
         """return descriptive string"""
@@ -503,19 +503,60 @@ class UPSF(threading.Thread):
         """return read-only logger"""
         return self._log
 
+    def __call__(self, status):
+        """called with ChannelConnectivity object"""
+        if status in (
+            grpc.ChannelConnectivity.IDLE,
+            grpc.ChannelConnectivity.CONNECTING,
+            grpc.ChannelConnectivity.READY,
+        ):
+            self.log.info(
+                {
+                    "entity": str(self),
+                    "status": {
+                        "name": status.name,
+                        "value": status.value[0],
+                    },
+                }
+            )
+        elif status in (grpc.ChannelConnectivity.TRANSIENT_FAILURE,):
+            self.log.warning(
+                {
+                    "entity": str(self),
+                    "status": {
+                        "name": status.name,
+                        "value": status.value[0],
+                    },
+                }
+            )
+        else:
+            self.log.error(
+                {
+                    "entity": str(self),
+                    "status": {
+                        "name": status.name,
+                        "value": status.value[0],
+                    },
+                }
+            )
+
     def connect(self, **kwargs):
         """connect to USPF gRPC service"""
-        # connect to upsf grpc service
-        self.grpc_channel = grpc.insecure_channel(self.upsf_grpc_svc)
+        # grpc channel
+        self.grpc_channel = None
 
         # get arguments
         backoff = float(kwargs.get("backoff", 1.0))
-        backoff_max = float(kwargs.get("backoff_max", 4.0))
-        max_retries = int(kwargs.get("max_retries", 16))
+        backoff_max = float(kwargs.get("backoff_max", 64.0))
+        max_retries = int(kwargs.get("max_retries", 6))
 
         # test gRPC channel for readiness
         while max_retries > 0:
             try:
+                # connect to upsf grpc service
+                self.grpc_channel = grpc.insecure_channel(self.upsf_grpc_svc)
+                self.grpc_channel.subscribe(self)
+
                 self.log.debug(
                     {
                         "entity": str(self),
@@ -557,6 +598,7 @@ class UPSF(threading.Thread):
                 )
                 backoff = backoff_max if backoff >= backoff_max else 2 * backoff
                 max_retries -= 1
+                self.grpc_channel.close()
 
         # error occurred: reset and raise exception
         self.grpc_channel = None
