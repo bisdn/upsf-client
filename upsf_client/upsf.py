@@ -510,7 +510,7 @@ class UPSF(threading.Thread):
             grpc.ChannelConnectivity.CONNECTING,
             grpc.ChannelConnectivity.READY,
         ):
-            self.log.info(
+            self.log.debug(
                 {
                     "entity": str(self),
                     "status": {
@@ -546,9 +546,22 @@ class UPSF(threading.Thread):
         self.grpc_channel = None
 
         # get arguments
-        backoff = float(kwargs.get("backoff", 1.0))
-        backoff_max = float(kwargs.get("backoff_max", 64.0))
-        max_retries = int(kwargs.get("max_retries", 6))
+        backoff = float(
+            kwargs.get(
+                "upsf_client_backoff", os.environ.get("UPSF_CLIENT_BACKOFF", 1.0)
+            )
+        )
+        backoff_max = float(
+            kwargs.get(
+                "upsf_client_backoff_max",
+                os.environ.get("UPSF_CLIENT_BACKOFF_MAX", 64.0),
+            )
+        )
+        max_retries = int(
+            kwargs.get(
+                "upsf_client_max_retries", os.environ.get("UPSF_CLIENT_MAX_RETRIES", 6)
+            )
+        )
 
         # test gRPC channel for readiness
         while max_retries > 0:
@@ -3501,8 +3514,8 @@ def main():
 
     with contextlib.suppress(Exception):
         if funcs.get(args.cmd, {}).get(args.subcmd, None) is None:
-            return 1
-    return funcs[args.cmd][args.subcmd](upsf, **vars(args))
+            sys.exit(1)
+    print(funcs[args.cmd][args.subcmd](upsf, **vars(args)))
 
 
 if __name__ == "__main__":

@@ -77,7 +77,7 @@ setuptools.setup(
     description="upsf grpc client package",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://gitlab.bisdn.de/DBNG/upsf_client.git",
+    url="https://github.com/bisdn/upsf-client.git",
     packages=setuptools.find_packages(),
     classifiers=[
         "Development Status :: 3 - Alpha",
